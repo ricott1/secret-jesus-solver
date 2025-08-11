@@ -1,0 +1,31 @@
+[package]
+name = "secret-jesus-solver"
+version = "1.0.30"
+edition = "2021"
+authors = ["Alessandro Ricottone <ricott2@gmail.com>"]
+license = "GPL-3.0-or-later"
+description = "SAT solver for Secret Jesus"
+readme = "README.md"
+homepage = "https://secretjes.us"
+repository = "https://github.com/ricott1/secret-jesus-solver"
+
+[profile.release]
+strip = true
+opt-level = 3
+lto = true
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+rand = "0.9"
+rand_chacha = "0.9"
+rustsat = "0.7.3"
+rustsat-minisat = "0.7.3"
+strum = { version = "0.27", features = ["derive"] }
+strum_macros = "0.27"
+void = "1.0.2"

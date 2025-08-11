@@ -1,5 +1,5 @@
-use rand::Rng;
 use rand::seq::{IndexedRandom, SliceRandom};
+use rand::Rng;
 use strum_macros::{Display, EnumIter};
 
 use crate::Event;
@@ -98,7 +98,11 @@ impl Player {
         }
     }
 
-    pub fn consume_prodigy(&mut self, event_index: usize) -> Prodigy {
+    pub fn consume_prodigy<R: rand::Rng + ?Sized>(
+        &mut self,
+        rng: &mut R,
+        event_index: usize,
+    ) -> Prodigy {
         if event_index == EVENTS_PER_GAME - 1 {
             if self.role == Role::Judas {
                 if let Some(pos) = self.prodigies.iter().position(|p| *p == Prodigy::Bane) {
@@ -111,7 +115,6 @@ impl Player {
             }
         }
 
-        let mut rng = rand::rng();
         let index = rng.random_range(0..self.prodigies.len());
         self.prodigies.remove(index)
     }
@@ -143,7 +146,7 @@ pub fn get_players(n: usize) -> Vec<Player> {
         .collect()
 }
 
-pub fn get_events(n: usize) -> Vec<Event> {
+pub fn get_events<R: rand::Rng + ?Sized>(rng: &mut R, n: usize) -> Vec<Event> {
     let all_events = vec![
         Event::FishCatch,
         Event::Transfiguration,
@@ -162,13 +165,12 @@ pub fn get_events(n: usize) -> Vec<Event> {
         .map(|e| *e)
         .collect();
 
-    let mut rng = rand::rng();
     let mut selected_events: Vec<Event> = eligible_events
-        .choose_multiple(&mut rng, EVENTS_PER_GAME - 1)
+        .choose_multiple(rng, EVENTS_PER_GAME - 1)
         .map(|e| *e)
         .collect();
 
-    selected_events.shuffle(&mut rng);
+    selected_events.shuffle(rng);
     selected_events.push(Event::LastSupper(n));
     selected_events
 }

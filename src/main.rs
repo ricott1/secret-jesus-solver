@@ -1,18 +1,26 @@
 use clap::Parser;
-use rand::seq::IteratorRandom;
-use rust_solver::*;
+use rand::{seq::IteratorRandom, SeedableRng};
+use rand_chacha::ChaCha8Rng;
+use secret_jesus_solver::*;
 
 fn print_possible_jesus(assignments: Vec<Vec<bool>>, players: &Vec<Player>) {
-    println!("\n Possible Jesus: {}", assignments.len());
+    println!("\nPossible Jesus: {}", assignments.len());
     for (index, assignment) in assignments.iter().enumerate() {
         let candidate_id = assignment
             .iter()
             .position(|&v| v == true)
             .expect("There should be at least one Jesus assignment");
+
+        let mark = if players[candidate_id].role == Role::Jesus {
+            "✅"
+        } else {
+            "❌"
+        };
         println!(
-            "Model {}: Jesus -> {:#?}",
+            "Model {}: Jesus is... {:<10} {}",
             index,
-            players[candidate_id].name()
+            format!("{}!", players[candidate_id].name()),
+            mark
         );
     }
 }
@@ -55,20 +63,25 @@ fn main() {
     let number_of_players = args.players;
     let seed = args.seed;
     let verbose = args.verbose;
+
+    let rng = if seed > 0 {
+        &mut ChaCha8Rng::seed_from_u64(seed)
+    } else {
+        &mut ChaCha8Rng::from_os_rng()
+    };
+
     let mut players = get_players(number_of_players);
-    let events = get_events(number_of_players);
+    let events = get_events(rng, number_of_players);
 
     let mut jesus_finder = JesusFinder::new(number_of_players);
     print_possible_jesus(jesus_finder.find_jesus(), &players);
 
-    let rng = &mut rand::rng();
-
     for (event_index, event) in events.iter().enumerate() {
-        println!("\nEvent #{}: {:#?}", event_index + 1, event);
         let selected_player_ids: Vec<usize> =
             (0..players.len()).choose_multiple(rng, event.participation());
 
         if verbose {
+            println!("\nEvent #{}: {:#?}", event_index + 1, event);
             println!(
                 "Selected players: {:#?}",
                 selected_player_ids
@@ -83,9 +96,14 @@ fn main() {
             .map(|&id| {
                 let player = &mut players[id];
 
-                let prodigy = player.consume_prodigy(event_index);
+                let prodigy = player.consume_prodigy(rng, event_index);
                 if verbose {
-                    println!("{} picked {:?}={}", player.name(), prodigy, prodigy.value());
+                    println!(
+                        "{} picked {:?} ({})",
+                        player.name(),
+                        prodigy,
+                        prodigy.value()
+                    );
                 }
                 prodigy
             })
@@ -107,15 +125,17 @@ fn main() {
             selected_prodigies.as_slice(),
         );
 
-        let models = jesus_finder.find_jesus();
-        assert!(models.len() >= 1);
-        if verbose {
-            print_possible_jesus(models, &players);
+        let assignments = jesus_finder.find_jesus();
+        assert!(assignments.len() >= 1);
+
+        if event_index == EVENTS_PER_GAME - 1 {
+            println!(
+                "\nSimulation complete: {} players - seed {}",
+                number_of_players, seed
+            );
+            print_possible_jesus(assignments, &players);
+        } else if verbose {
+            print_possible_jesus(assignments, &players);
         }
     }
-    println!(
-        "\nSimulation complete: {} players - seed {}",
-        number_of_players, seed
-    );
-    print_possible_jesus(models, &players);
 }
