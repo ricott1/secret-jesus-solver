@@ -9,12 +9,13 @@ The **Secret Jesus Solver** is a simulation and SAT solver for [Secret Jesus](ht
    ```bash
    git clone <repository-url>
    cd secret-jesus-solver
+3. **Run the solver**:
 ```bash
 cargo run --release -- [OPTIONS]
 ```
-- `--players <N>`: Number of players in the simulation (default: 7).
-- `--seed <SEED>`: Optional random seed for reproducibility.
-- `--verbose`: Print detailed output for each game.
+-   `-p, --players <PLAYERS>`  The number of players to simulate in the game. [default: 7].
+- `-s, --seed <SEED>`: Optional random seed for reproducibility. [default: 0].
+- `-v, --verbose`: Enable verbose output for detailed game simulation.
 
 Example:
 ```bash
